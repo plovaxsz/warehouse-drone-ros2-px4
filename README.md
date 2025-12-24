@@ -1,4 +1,4 @@
-# 🚁 Autonomous Indoor Warehouse Drone System
+# 🚁 Sistem Drone Otonom Gudang Dalam Ruangan (Autonomous Indoor Warehouse Drone)
 
 ![ROS 2 Humble](https://img.shields.io/badge/ROS_2-Humble-blue?style=for-the-badge&logo=ros)
 ![PX4 Autopilot](https://img.shields.io/badge/PX4-v1.14-green?style=for-the-badge&logo=px4)
@@ -6,85 +6,93 @@
 ![Python](https://img.shields.io/badge/Python-3.10-yellow?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
 
-> **Final Internship Project - R&D Division**
+> **Proyek Akhir Magang - Divisi Research & Development (R&D)**
 > **PT Global Digital Niaga Tbk (Blibli)**
-> *August 2025 – December 2025*
+> *Agustus 2025 – Desember 2025*
 
 ---
 
-## 📋 Overview (Tinjauan Proyek)
+## 📋 Tinjauan Proyek (Project Overview)
 
-This repository contains the complete source code and simulation environment for an **Autonomous UAV System** designed to operate in **GPS-Denied Indoor Environments** (specifically large-scale logistics warehouses).
+Repositori ini berisi kode sumber lengkap (*full source code*) dan lingkungan simulasi untuk **Sistem UAV Otonom** yang dirancang khusus untuk beroperasi di **Lingkungan Dalam Ruangan Tanpa GPS (GPS-Denied)**, secara spesifik untuk kasus penggunaan di gudang logistik berskala besar.
 
-The primary goal of this project was to solve the problem of manual stock counting in high-rack storage areas. By utilizing a custom-built software stack bridging **ROS 2 Humble** and **PX4 Autopilot**, this drone is capable of:
-1.  **Self-Localization:** Using Lidar and IMU fusion (Odometry) to navigate without GPS.
-2.  **Mapping:** Generating 2D Occupancy Grid Maps of the warehouse aisles in real-time.
-3.  **Autonomous Navigation:** Planning paths around static (racks) and dynamic obstacles using the Nav2 stack.
+Tujuan utama dari proyek ini adalah mengatasi tantangan penghitungan stok manual di area penyimpanan rak tinggi (*high-rack storage*). Dengan memanfaatkan tumpukan perangkat lunak kustom yang menjembatani **ROS 2 Humble** dan **PX4 Autopilot**, drone ini memiliki kemampuan:
 
-This system has been validated in a High-Fidelity "Digital Twin" simulation of the Blibli Warehouse using Gazebo Garden.
+1.  **Lokalisasi Mandiri (Self-Localization):** Menggunakan fusi sensor Lidar 2D dan IMU (Odometry) untuk navigasi presisi tanpa bantuan sinyal satelit.
+2.  **Pemetaan Real-time (Mapping):** Menghasilkan Peta Okupansi Grid 2D (*Occupancy Grid Map*) dari lorong-lorong gudang secara langsung saat terbang.
+3.  **Navigasi Otonom:** Merencanakan jalur penerbangan yang aman menghindari rintangan statis (rak) dan dinamis menggunakan stack Nav2.
+
+Sistem ini telah divalidasi sepenuhnya dalam simulasi "Digital Twin" berfideliatas tinggi dari Gudang Blibli menggunakan simulator Gazebo Garden.
 
 ---
 
-## 🏗 System Architecture (Arsitektur Teknis)
+## 🏗 Arsitektur Sistem (System Architecture)
 
-The system operates on a distributed architecture to separate high-level logic from low-level flight control:
+Sistem ini beroperasi pada arsitektur terdistribusi untuk memisahkan logika tingkat tinggi (*high-level logic*) dari kontrol penerbangan tingkat rendah (*low-level control*):
 
-| Layer | Technology | Function |
+| Lapisan (Layer) | Teknologi | Fungsi Utama |
 | :--- | :--- | :--- |
-| **Application Layer** | **ROS 2 Humble** | Handles Path Planning (Nav2), Mapping (SLAM Toolbox), and Mission Logic (`px4_clean_nav`). |
-| **Middleware Layer** | **Micro XRCE-DDS** | Acts as a high-speed bridge transferring `uORB` topics from the flight controller to ROS 2 DDS topics. |
-| **Flight Control Layer** | **PX4 Autopilot** | Handles motor mixing, attitude stabilization, and state estimation (EKF2). |
-| **Simulation Layer** | **Gazebo Garden** | Simulates physics, gravity, collision (`warehouse_rack`), and sensors (2D Lidar). |
+| **Application Layer** | **ROS 2 Humble** | Menangani Perencanaan Jalur (Nav2), Pemetaan (SLAM Toolbox), dan Logika Misi (`px4_clean_nav`). |
+| **Middleware Layer** | **Micro XRCE-DDS** | Bertindak sebagai jembatan berkecepatan tinggi yang mentransfer topik `uORB` dari flight controller ke jaringan DDS ROS 2. |
+| **Flight Control Layer** | **PX4 Autopilot** | Menangani pencampuran motor (*mixer*), stabilisasi sikap (*attitude*), dan estimasi status kendaraan (EKF2). |
+| **Simulation Layer** | **Gazebo Garden** | Mensimulasikan fisika, gravitasi, tabrakan (`warehouse_rack`), dan data sensor Lidar. |
 
-### 🔄 Coordinate Transformation Logic
-One of the key innovations in this repo is the `cmd_sender.py` node, which solves the **ENU (ROS) to NED (PX4)** coordinate mismatch in real-time:
+### 🔄 Logika Transformasi Koordinat (Coordinate Transformation)
+Salah satu inovasi kunci dalam repositori ini adalah node `cmd_sender.py`, yang menyelesaikan ketidakcocokan sistem koordinat antara **ENU (ROS)** dan **NED (PX4)** secara *real-time*:
+
 ```python
-# Real-time Vector Rotation Logic
+# Logika Rotasi Vektor Kecepatan Real-time
 vel_north = cmd_x * cos(yaw) - cmd_y * sin(yaw)
 vel_east  = cmd_x * sin(yaw) + cmd_y * cos(yaw)
-
-📂 Repository Structure
+# Hal ini memastikan perintah "Maju" dari ROS diterjemahkan dengan benar
+# sesuai arah hadap (heading) drone di dunia PX4.
+```
+📂 Struktur Repositori
 Plaintext
 
 warehouse-drone-ros2-px4/
 ├── src/
-│   ├── px4_clean_nav/          # [CORE] Custom package for Navigation Logic
-│   │   ├── config/             # Configuration files (Nav2 params, SLAM, Explore)
-│   │   ├── launch/             # Launch files (final_demo.launch.py, etc.)
-│   │   └── px4_clean_nav/      # Python Nodes (cmd_sender, offboard_control)
-│   ├── simple_explorer/        # [EXTRA] Autonomous frontier exploration logic
+│   ├── px4_clean_nav/          # [CORE] Paket Kustom Logika Navigasi
+│   │   ├── config/             # File Konfigurasi (Nav2 params, SLAM, Explore)
+│   │   ├── launch/             # File Peluncuran (final_demo.launch.py, dll.)
+│   │   └── px4_clean_nav/      # Node Python (cmd_sender, offboard_control)
+│   ├── simple_explorer/        # [EXTRA] Logika eksplorasi frontier otonom
 │   └── ...
 │
-├── PX4-Autopilot/              # [SUBMODULE] The Flight Control Firmware
-├── Micro-XRCE-DDS-Agent/       # [SUBMODULE] Communication Bridge
+├── PX4-Autopilot/              # [SUBMODULE] Firmware Kontrol Penerbangan
+├── Micro-XRCE-DDS-Agent/       # [SUBMODULE] Jembatan Komunikasi DDS
 │
 ├── worlds/
-│   └── warehouse.sdf           # [ASSET] Custom Blibli Warehouse World
+│   └── warehouse.sdf           # [ASSET] Dunia Simulasi Gudang Blibli Kustom
 ├── models/
-│   └── warehouse_rack/         # [ASSET] 3D Models for Warehouse Racks
+│   └── warehouse_rack/         # [ASSET] Model 3D Rak Gudang
 │
-└── README.md                   # This documentation
+└── README.md                   # Dokumentasi ini
 
-🛠 Installation Guide (Panduan Instalasi)
-Prerequisites
+🛠️ Panduan Instalasi Komprehensif
 
-    OS: Ubuntu 22.04 LTS (Jammy Jellyfish)
+Menyiapkan lingkungan pengembangan drone otonom memerlukan konfigurasi yang presisi. Harap ikuti langkah-langkah ini secara berurutan untuk memastikan middleware ROS 2 dapat berinteraksi dengan flight stack PX4 dengan benar.
+1. Prasyarat Sistem
 
-    Framework: ROS 2 Humble
+Sebelum melakukan cloning, pastikan mesin host Anda menjalankan Ubuntu 22.04 LTS (Jammy Jellyfish). Versi OS ini wajib karena ROS 2 Humble adalah Tier 1 supported hanya pada Jammy.
 
-    Simulator: Gazebo Garden
+    Versi Python: 3.10+
 
-Step 1: Clone the Repository
+    Sistem Build: Colcon (Collective Construction)
 
-Use the --recursive flag to ensure PX4 and DDS Agent submodules are downloaded.
+    Simulator: Gazebo Garden (gz-sim-7)
+
+2. Mengambil Repositori (Cloning)
+
+Kita menggunakan flag --recursive untuk mengambil tidak hanya kode kita, tetapi juga submodule masif untuk Flight Controller dan DDS Middleware yang terhubung dalam repo ini.
 Bash
 
 git clone --recursive [https://github.com/plovaxsz/warehouse-drone-ros2-px4.git](https://github.com/plovaxsz/warehouse-drone-ros2-px4.git)
 cd warehouse-drone-ros2-px4
 
-Step 2: Build Middleware (DDS Agent)
+3. Kompilasi Middleware: Micro XRCE-DDS Agent
 
-The agent is required to translate ROS 2 messages to PX4 uORB messages.
+Micro XRCE-DDS Agent adalah komponen "penerjemah" yang kritis. Ia duduk di antara drone (yang berbicara protokol uORB) dan komputer (yang berbicara protokol DDS ROS 2). Kita harus mengompilasinya dari sumber (source) untuk memastikan kompatibilitas tipe pesan.
 Bash
 
 cd Micro-XRCE-DDS-Agent
@@ -94,73 +102,123 @@ make
 sudo make install
 sudo ldconfig /usr/local/lib/
 
-Step 3: Setup PX4 Autopilot Simulation
+    Catatan Teknis: Perintah sudo ldconfig sangat krusial. Ini memperbarui cache pustaka bersama sistem sehingga saat Anda menjalankan MicroXRCEAgent nanti, Ubuntu tahu persis di mana menemukan pustaka .so yang baru dibuat.
 
-Build the SITL (Software In The Loop) firmware.
+4. Setup Firmware Penerbangan: PX4 Autopilot
+
+Kita perlu mengompilasi firmware PX4 secara khusus untuk simulasi Software-In-The-Loop (SITL). Ini menciptakan binary executable yang mampu mensimulasikan fisika tanpa perangkat keras nyata.
 Bash
 
 cd ../../PX4-Autopilot
+# Install dependensi standar PX4 (ini mungkin memakan waktu)
 bash ./Tools/setup/ubuntu.sh
+
+# Kompilasi binary SITL
 make px4_sitl
 
-(Note: If the build finishes, press Ctrl+C to exit).
-Step 4: Build ROS 2 Packages
+(Setelah shell "px4>" muncul atau build selesai dengan sukses, Anda bisa menekan Ctrl+C untuk keluar).
+5. Kompilasi Workspace: Paket ROS 2
 
-Compile the custom navigation packages.
+Terakhir, kita build logika navigasi kustom kita (px4_clean_nav). Kita menggunakan --symlink-install agar setiap perubahan yang Anda buat pada skrip Python (cmd_sender.py, dll.) langsung terrefleksi tanpa perlu rebuild.
 Bash
 
 cd ..
+# Source environment ROS 2 Humble terlebih dahulu
+source /opt/ros/humble/setup.bash
+
+# Install dependensi yang didefinisikan di package.xml
+rosdep install --from-paths src --ignore-src -r -y
+
+# Build workspace
 colcon build --symlink-install
-source install/setup.bash
 
-🚀 How to Run the Simulation
+🌏 Konfigurasi Aset Gudang (Environment Setup)
 
-You will need 3 separate terminals to run the full stack.
-TERMINAL 1: The Communication Bridge
+Karena kita menggunakan lingkungan gudang kustom (warehouse.sdf) dan aset 3D kustom (warehouse_rack), kita harus memberitahu Gazebo di mana menemukan file-file ini.
 
-This starts the DDS Agent to listen on UDP port 8888.
+Tambahkan baris berikut ke file ~/.bashrc Anda (atau jalankan di terminal sebelum meluncurkan simulasi):
+Bash
+
+# Arahkan ke folder models kustom kita agar Gazebo bisa merender rak
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$(pwd)/models
+
+# (Opsional) Jika PX4 mengeluh world tidak ditemukan:
+# Salin file world kita ke direktori default PX4
+cp worlds/warehouse.sdf PX4-Autopilot/Tools/simulation/gz/worlds/default.sdf
+
+🚀 Protokol Eksekusi (Cara Menjalankan Simulasi)
+
+Untuk mengorkestrasi sistem kompleks ini, kita memerlukan tiga (3) sesi terminal yang berjalan bersamaan. Setiap terminal menangani lapisan arsitektur tertentu.
+TERMINAL 1: Jembatan Komunikasi (The Bridge)
+
+Ini menginisiasi DDS Agent. Ia mendengarkan pada UDP Port 8888 untuk telemetri masuk dari drone dan meneruskannya ke topik ROS 2.
 Bash
 
 MicroXRCEAgent udp4 -p 8888
 
-TERMINAL 2: The Simulation Physics (Gazebo + PX4)
+    Indikator Sukses: Anda akan melihat output "Agent created", menunggu klien.
 
-This launches the drone in the custom warehouse environment.
+TERMINAL 2: Simulasi Fisika (Gazebo + PX4)
+
+Ini meluncurkan instance PX4 headless dan GUI Gazebo. Ini memuat dunia warehouse.sdf kita dan memunculkan drone x500 yang dilengkapi dengan Lidar 2D.
 Bash
 
 cd PX4-Autopilot
-# Ensure warehouse.sdf is copied to PX4 worlds directory or set GZ_SIM_RESOURCE_PATH
-make px4_sitl gz_x500_lidar
+export PX4_SIM_MODEL=gz_x500_lidar
+./build/px4_sitl_default/bin/px4
 
-TERMINAL 3: The "Brain" (ROS 2 Navigation)
+    Indikator Sukses: Jendela Gazebo terbuka, menampilkan rak-rak gudang dan drone di lantai.
 
-This launches Nav2, SLAM, Rviz, and the Offboard Control logic.
+TERMINAL 3: Stack Otonom (ROS 2 "The Brain")
+
+Di sinilah kode kustom kita bekerja. Ini meluncurkan Navigation Stack (Nav2), SLAM Toolbox untuk pemetaan, RViz untuk visualisasi, dan logika Kontrol Offboard.
 Bash
 
 cd warehouse-drone-ros2-px4
 source install/setup.bash
+
+# Luncurkan demo otonom penuh
 ros2 launch px4_clean_nav final_demo.launch.py
 
-🔧 Troubleshooting & Tips
+🔧 Pemecahan Masalah Mendalam (Troubleshooting)
+🔴 Critical Error: "Zero poses in plan"
 
-    Issue: "Zero poses in plan" error in Nav2.
+Gejala: Drone lepas landas tetapi menolak bergerak ke tujuan. Log Nav2 menunjukkan error ini. Akar Masalah: Perencana Nav2 (Algoritma A*) dikonfigurasi terlalu konservatif. Ia menganggap "Unknown Space" (area abu-abu di peta) sebagai rintangan mematikan. Solusi:
 
-        Fix: Ensure allow_unknown: true is set in nav2_params.yaml. The planner initially doesn't know where it can fly, so it needs permission to explore unknown space.
+    Buka src/px4_clean_nav/config/nav2_params.yaml.
 
-    Issue: Drone drifts when hovering.
+    Cari konfigurasi perencana GridBased.
 
-        Fix: The offboard_control.py node includes a "Position Hold" logic. Ensure the node is running and receiving odom data.
+    Pastikan allow_unknown: true diset. Ini memaksa perencana untuk mengasumsikan ruang yang belum dipetakan aman untuk dilalui.
 
-👨‍💻 Author & Maintainer
+🔴 Critical Error: Drone Drifting / Unstable Hover
 
-Josh Abraham Efendi (plovaxsz)
+Gejala: Drone bergeser (sliding) saat seharusnya diam. Akar Masalah: Kurangnya kunci GPS di mode indoor memaksa drone mengandalkan "Dead Reckoning". Jika cmd_sender.py tidak beralih ke mode "Position Hold", noise simulasi angin akan mendorong drone. Solusi: Node offboard_control.py kami mengimplementasikan Hybrid Control Loop. Ia secara otomatis mengunci posisi odometry (x, y) saat ini sebagai setpoint setiap kali perintah kecepatan bernilai nol selama lebih dari 0.5 detik.
+🔴 Critical Error: "MicroXRCEAgent command not found"
 
-    Role: AI & Robotics Intern at Blibli R&D
+Akar Masalah: Langkah instalasi sudo make install terlewat atau gagal. Solusi: Jalankan kembali perintah instalasi di bagian Kompilasi Middleware dan pastikan sudo ldconfig dieksekusi.
+📜 Kredit & Ucapan Terima Kasih
 
-    Institution: President University (Informatics)
+Proyek ini dikembangkan sebagai syarat kelulusan Program Magang Akhir di President University bekerja sama dengan PT Global Digital Niaga Tbk (Blibli).
 
-    Email: josh.efendi@student.president.ac.id
+Pengembang Utama:
 
-    GitHub: github.com/plovaxsz
+    Josh Abraham Efendi (plovaxsz)
 
-Built with ❤️ using ROS 2 and PX4.
+        Peran: AI & Robotics Intern (Divisi R&D)
+
+        Fokus: Implementasi SLAM, Arsitektur ROS 2, dan Rekayasa Simulasi.
+
+        Institusi: President University (Informatika)
+
+        Kontak: josh.efendi@student.president.ac.id
+
+        GitHub: github.com/plovaxsz
+
+Terima Kasih Khusus kepada:
+
+    Tim R&D Blibli atas bimbingan mengenai kendala logistik gudang nyata.
+
+    Komunitas Open Source PX4 & ROS 2 atas dokumentasi yang kuat.
+
+© 2025 Josh Abraham Efendi. All Rights Reserved.

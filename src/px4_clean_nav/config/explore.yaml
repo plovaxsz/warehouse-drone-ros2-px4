@@ -1,0 +1,14 @@
+explore_node:
+  ros__parameters:
+    use_sim_time: true
+    robot_base_frame: base_link
+    costmap_topic: /global_costmap/costmap
+    costmap_updates_topic: /global_costmap/costmap_updates
+    visualize: true
+    planner_frequency: 0.33  # Rencana ulang tiap 3 detik (Hemat CPU)
+    progress_timeout: 30.0
+    potential_scale: 3.0     # Bobot jarak
+    orientation_scale: 0.0   # Abaikan arah hadap
+    gain_scale: 1.0          # Bobot luas area
+    min_frontier_size: 0.75  # Abaikan celah sempit
+    return_to_init: true

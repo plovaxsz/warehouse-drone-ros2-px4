@@ -1,0 +1,26 @@
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+    
+    mode: mapping
+    map_update_interval: 2.0
+    resolution: 0.1
+    max_laser_range: 20.0
+    minimum_time_interval: 0.2
+    
+    # --- TOLERANSI ---
+    transform_timeout: 1.0     
+    tf_buffer_duration: 60.0   
+    stack_size_to_use: 40000000 
+    scan_queue_size: 20        
+    
+    do_loop_closing: true

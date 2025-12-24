@@ -47,27 +47,41 @@ vel_east  = cmd_x * sin(yaw) + cmd_y * cos(yaw)
 # Hal ini memastikan perintah "Maju" dari ROS diterjemahkan dengan benar
 # sesuai arah hadap (heading) drone di dunia PX4.
 ```
-📂 Struktur Repositori
-Plaintext
+## 📂 Struktur Repositori
 
+
+
+```text
 warehouse-drone-ros2-px4/
 ├── src/
 │   ├── px4_clean_nav/          # [CORE] Paket Kustom Logika Navigasi
 │   │   ├── config/             # File Konfigurasi (Nav2 params, SLAM, Explore)
 │   │   ├── launch/             # File Peluncuran (final_demo.launch.py, dll.)
-│   │   └── px4_clean_nav/      # Node Python (cmd_sender, offboard_control)
+│   │   ├── px4_clean_nav/      # Node Python (cmd_sender, offboard_control)
+│   │   └── package.xml         # Definisi dependensi paket
+│   │
 │   ├── simple_explorer/        # [EXTRA] Logika eksplorasi frontier otonom
-│   └── ...
+│   └── px4_msgs/               # [SUBMODULE] Definisi pesan uORB PX4
 │
 ├── PX4-Autopilot/              # [SUBMODULE] Firmware Kontrol Penerbangan
+│   ├── Tools/
+│   ├── build/
+│   └── ...
+│
 ├── Micro-XRCE-DDS-Agent/       # [SUBMODULE] Jembatan Komunikasi DDS
 │
 ├── worlds/
 │   └── warehouse.sdf           # [ASSET] Dunia Simulasi Gudang Blibli Kustom
+│
 ├── models/
 │   └── warehouse_rack/         # [ASSET] Model 3D Rak Gudang
+│       ├── model.sdf
+│       └── model.config
 │
+├── .gitignore                  # Mengabaikan folder build/install/log
 └── README.md                   # Dokumentasi ini
+```
+
 
 🛠️ Panduan Instalasi Komprehensif
 
